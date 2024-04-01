@@ -1,0 +1,77 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Constants
+q = 1.60217662e-19  # elementary charge
+k = 1.38064852e-23  # Boltzmann's constant
+n = 0.91168         # ideality factor
+I_SC = 9.21         # Short circuit current
+V_OC = 21           # Open circuit voltage
+T = 298.15          # Cell temperature
+V = np.linspace(0, 0.76, 1000)  # Using voltage as input variable
+T_0 = 298.15        # Reference temp = 25C
+I_r0 = 1000         # reference Irradiance
+TC = 0.0029         # temp coefficient of Isc by manufacturer
+V_g = 1.79e-19      # Band gap in Joules
+I_r = 800           # Irradiance input
+
+# Creating meshgrid
+V_m, I_rm = np.meshgrid(V, [I_r])
+
+# Saturation current at ref temp given by equation in research paper
+I_s0 = 1.2799e-8
+
+# Equation for photocurrent, given in paper
+I_ph = ((I_SC / I_r0) * I_rm) * (1 + TC * (T - T_0))
+
+# Saturation current equation in paper
+I_s = I_s0 * (T / T_0)**(3 / n) * np.exp((-(q * V_g) / (n * k)) * ((1 / T) - (1 / T_0)))
+
+# Current equation
+I = I_ph - I_s * np.exp((q * V_m) / (n * k * T) - 1)
+
+# Plot IV curve
+plt.plot(V, I.flatten(), linewidth=2, label='1')
+
+# Parameters for the second curve
+T_1 = 288.15
+I_r_1 = 900
+
+# Equation for photocurrent, given in paper
+I_ph_1 = ((I_SC / I_r0) * I_rm) * (1 + TC * (T_1 - T_0))
+
+# Saturation current equation in paper
+I_s_1 = I_s0 * (T_1 / T_0)**(3 / n) * np.exp((-(q * V_g) / (n * k)) * ((1 / T_1) - (1 / T_0)))
+
+# Current equation for the second curve
+I_1 = I_ph_1 - I_s_1 * np.exp((q * V_m) / (n * k * T_1) - 1)
+
+# Plot second IV curve
+plt.plot(V, I_1.flatten(), linewidth=2, label='4')
+
+# Find Voc
+Voc = V[np.where(I_1 <= 0)][-1]
+
+# Find Isc
+Isc = I_1[0]
+
+print(f'Open-Circuit Voltage (Voc): {Voc} V')
+print(f'Short-Circuit Current (Isc): {Isc} A')
+
+# Find the maximum power point (Vmp, Imp)
+P = V * I_1.flatten()
+idx_max = np.argmax(P)
+Vmp = V[idx_max]
+Imp = I_1.flatten()[idx_max]
+P_max = P[idx_max]
+
+print(f'Maximum Power Point Voltage (Vmp): {Vmp} V')
+print(f'Maximum Power Point Current (Imp): {Imp} A')
+print(f'Maximum Power (Pmax): {P_max} W')
+
+# Plot settings
+plt.xlabel('Voltage (V)')
+plt.ylabel('Current (A)')
+plt.legend()
+plt.grid(True)
+plt.show()
